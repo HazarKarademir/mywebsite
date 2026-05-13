@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "title": "Örnek Proje",
+    "description": "Bu bir örnek proje açıklamasıdır. Kendi projenizi admin panelinden ekleyebilirsiniz.",
+    "tags": ["Python", "GitHub"],
+    "github": "https://github.com/HazarKarademir",
+    "date": "2025-01-01",
+    "featured": true
+  }
+]
