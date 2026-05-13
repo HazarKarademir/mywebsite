@@ -1,11 +1,18 @@
 [
   {
-    "id": 1,
-    "title": "Örnek Proje",
-    "description": "Bu bir örnek proje açıklamasıdır. Kendi projenizi admin panelinden ekleyebilirsiniz.",
-    "tags": ["Python", "GitHub"],
-    "github": "https://github.com/HazarKarademir",
-    "date": "2025-01-01",
+    "id": 1778702104914,
+    "title": "Hesapladım.App",
+    "description": "Sıfırdan mimarisini kurup geliştirdiğim ilk uygulamam olan Hesapladım an itibarıyla yayında! 📱💻\n\n\"Hesapladım\", sıradan bir hesap makinesinin ötesine geçerek mühendislik, finans, istatistik ve günlük hayata dair spesifik formülleri tek bir çatı altında topluyor.\n\nİşin mutfağında beni en çok heyecanlandıran iki mimari karar oldu:\n\n🌍 Çapraz Platform (Cross-Platform): React Native ve Expo gücüyle projeyi tek bir kod tabanında yazdım. Bu sayede uygulama anında Android, iOS ve Web ortamlarında kusursuz bir şekilde çalışabiliyor.\n\n⚙️ Dinamik Ölçeklenebilirlik: Uygulamayı her yeni formül için sıfırdan ekran tasarlamak yerine, dinamik bir mimariyle kurdum. Veri tabanına yeni bir kategori veya matematiksel formül eklediğim an, sistem bunu algılayıp inputları, butonları ve sonuç ekranını kendi kendine oluşturup fixliyor. Yani uygulama içerik büyüdükçe kod hamallığına dönüşmüyor, kendi kendini adapte ediyor!\n\n🚀 Gelecek Planlarım (Roadmap): Ürünü statik bir araç olmaktan çıkarıp yaşayan bir deneyime dönüştürmeye devam ediyorum. Yakın zamanda eklenecekler:\n\nİnteraktif Veri Görselleştirme: (Videoda konsepti görebilirsiniz!) Çember alanı veya hipotenüs gibi sonuçların sadece metinle değil, dinamik geometrik çizimlerle ekrana yansıması.\n\nHesaplama Geçmişi (History): Yapılan spesifik hesaplamaların (Örn: Z-Puanı, Kripto PnL) yerel cihaza kaydedilip daha sonra tekrar incelenebilmesi.\n\n🛠️ Kullandığım Teknolojiler ve Özellikler:\n\nReact Native & Expo (JavaScript ES6+)\nDinamik Render Mimarisi (Dynamic UI generation)\nGöz yormayan, her ekrana duyarlı Dark Mode tasarımı\nDuruma göre akıllı tepkiler veren kullanıcı deneyimi\n\nSadece metin tabanlı sonuçlar veren değil, kullanıcı deneyimini ve kod kalitesini merkeze alan bir \"Gelişmiş Çakı\" tasarlamak istedim. Kodları incelemek veya projeye katkıda bulunmak isteyenler için GitHub repomu herkese açık hale getirdim. \n\nGeri bildirimleriniz benim için çok değerli, yorumlarınızı ve eleştirilerinizi bekliyorum! 👇\n\n🔗 GitHub Repository: https://lnkd.in/dTy6QG2g\n#ReactNative #CrossPlatform #MobileAppDevelopment #iOS #Android #JavaScript #SoftwareEngineering #WebDevelopment #Tech",
+    "date": "2026-05-13",
+    "github": "https://github.com/HazarKarademir/hesapladim-app",
+    "tags": [
+      "MobileAppDevelopment",
+      "iOS",
+      "Android",
+      "JavaScript",
+      "TechWebDevelopment",
+      "SoftwareEngineering"
+    ],
     "featured": true
   }
 ]
