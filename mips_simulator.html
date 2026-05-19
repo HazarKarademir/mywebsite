@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIPS Simulator</title>
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: 'Segoe UI', sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+header {
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.logo {
+  font-family: 'Courier New', monospace;
+  font-size: 19px;
+  font-weight: bold;
+  color: #00d4aa;
+}
+.logo em { color: #8b949e; font-style: normal; }
+
+.tagline {
+  font-size: 11px;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  background: #1c2128;
+  padding: 2px 9px;
+  border-radius: 12px;
+  font-family: monospace;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* each quadrant */
+.pane {
+  border-right: 1px solid #30363d;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pane-title {
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 6px 13px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #8b949e;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.pane-title .led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00d4aa;
+}
+.led.blue { background: #58a6ff; }
+.led.orange { background: #ff6b35; }
+.led.purple { background: #a5a0f7; }
+
+/* left column spans both rows */
+#editor-pane { grid-column: 1; grid-row: 1 / 3; }
+
+.editor-body {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-y: auto;
+}
+
+textarea#code {
+  background: #0d1117;
+  color: #00d4aa;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.75;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  padding: 10px 13px;
+  resize: none;
+  outline: none;
+  flex: 1;
+  min-height: 200px;
+}
+textarea#code:focus {
+  border-color: #00d4aa;
+}
+
+.btn-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+button {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 7px 14px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+button:active { opacity: 0.8; }
+
+#btn-load { background: #00d4aa; color: #000; }
+#btn-load:hover { background: #00efc0; }
+
+#btn-step {
+  background: #1c2128;
+  color: #58a6ff;
+  border: 1px solid #58a6ff;
+}
+#btn-step:hover:not([disabled]) { background: rgba(88,166,255,0.1); }
+#btn-step[disabled] { opacity: 0.3; cursor: default; }
+
+#btn-all {
+  background: #3fb950;
+  color: #000;
+}
+#btn-all:hover:not([disabled]) { background: #52d765; }
+#btn-all[disabled] { opacity: 0.3; cursor: default; }
+
+#btn-reset {
+  background: #1c2128;
+  color: #f85149;
+  border: 1px solid #30363d;
+}
+#btn-reset:hover { background: rgba(248,81,73,0.08); }
+
+#statusbar {
+  background: #1c2128;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  padding: 6px 11px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #8b949e;
+  min-height: 32px;
+}
+#statusbar.ok { color: #3fb950; }
+#statusbar.err { color: #f85149; }
+#statusbar.info { color: #58a6ff; }
+
+.small-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #8b949e;
+}
+
+#instr-list {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  overflow-y: auto;
+  min-height: 90px;
+  max-height: 220px;
+  flex-shrink: 0;
+}
+
+.instr-row {
+  display: flex;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  border-bottom: 1px solid #21262d;
+}
+.instr-row:last-child { border-bottom: none; }
+
+.instr-idx {
+  width: 32px;
+  padding: 6px 5px;
+  text-align: right;
+  color: #8b949e;
+  background: #161b22;
+  border-right: 1px solid #30363d;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.instr-text {
+  padding: 6px 11px;
+  color: #e6edf3;
+  flex: 1;
+}
+
+.instr-row.current {
+  background: rgba(0,212,170,0.07);
+  border-left: 2px solid #00d4aa;
+}
+.instr-row.current .instr-idx { color: #00d4aa; }
+.instr-row.done { opacity: 0.4; }
+.instr-row.bad { background: rgba(248,81,73,0.08); }
+
+/* registers panel */
+#reg-pane { grid-column: 2; grid-row: 1; }
+
+.reg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  padding: 9px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.reg-box {
+  background: #1c2128;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 4px 7px;
+  font-family: monospace;
+  font-size: 11px;
+  transition: background 0.25s, border-color 0.25s;
+}
+.reg-box.highlight {
+  background: rgba(0,212,170,0.13);
+  border-color: #00d4aa;
+  animation: pop 0.6s ease;
+}
+@keyframes pop {
+  0% { background: rgba(0,212,170,0.4); }
+  100% { background: rgba(0,212,170,0.13); }
+}
+.reg-box.zeroval .reg-name,
+.reg-box.zeroval .reg-val { color: #8b949e; opacity: 0.4; }
+
+.reg-name {
+  font-size: 9px;
+  color: #8b949e;
+  margin-bottom: 1px;
+}
+.reg-val {
+  font-size: 11px;
+  font-weight: bold;
+  color: #e6edf3;
+}
+.reg-box.highlight .reg-val { color: #00d4aa; }
+
+/* machine code panel */
+#mc-pane { grid-column: 2; grid-row: 2; }
+
+.mc-body {
+  flex: 1;
+  padding: 9px 13px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.mc-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.mc-instr {
+  background: #161b22;
+  padding: 5px 11px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #00d4aa;
+  border-bottom: 1px solid #30363d;
+}
+.mc-fields {
+  display: flex;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 11px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 5px;
+  border-right: 1px solid #30363d;
+  flex-shrink: 0;
+}
+.field:last-child { border-right: none; }
+.field-name {
+  font-size: 8px;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+.field-bits { font-size: 11px; font-weight: bold; letter-spacing: 0.8px; }
+
+.field.f-op  { background: rgba(88,166,255,0.07); }
+.field.f-op .field-bits  { color: #58a6ff; }
+.field.f-rs  { background: rgba(165,160,247,0.07); }
+.field.f-rs .field-bits  { color: #a5a0f7; }
+.field.f-rt  { background: rgba(0,212,170,0.07); }
+.field.f-rt .field-bits  { color: #00d4aa; }
+.field.f-rd  { background: rgba(255,107,53,0.07); }
+.field.f-rd .field-bits  { color: #ff6b35; }
+.field.f-sh  { background: rgba(210,153,34,0.07); }
+.field.f-sh .field-bits  { color: #d29922; }
+.field.f-fn  { background: rgba(63,185,80,0.07); }
+.field.f-fn .field-bits  { color: #3fb950; }
+.field.f-im  { background: rgba(248,81,73,0.07); }
+.field.f-im .field-bits  { color: #f85149; }
+
+.mc-meta {
+  border-top: 1px solid #30363d;
+  padding: 4px 11px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #8b949e;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.mc-meta b { color: #e6edf3; font-weight: normal; }
+
+.hint {
+  color: #8b949e;
+  font-size: 12px;
+  font-family: monospace;
+  text-align: center;
+  padding: 18px;
+  opacity: 0.55;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MIPS<em>sim</em></div>
+  <div class="tagline">R-type &amp; I-type Instruction Simulator</div>
+</header>
+
+<div class="layout">
+
+  <!-- Assembly editor + controls -->
+  <div class="pane" id="editor-pane">
+    <div class="pane-title"><div class="led"></div> Assembly Editor</div>
+    <div class="editor-body">
+
+      <textarea id="code" spellcheck="false"># Write your MIPS assembly below.
+# R-type: add, sub, and, or, nor, xor, slt, sll, srl, sra
+# I-type: addi, andi, ori, xori, slti, lui, beq, bne, lw, sw
+
+addi $t0, $zero, 10
+addi $t1, $zero, 25
+add  $t2, $t0, $t1
+sub  $t3, $t2, $t0
+and  $t4, $t0, $t1
+or   $t5, $t0, $t1
+xor  $t6, $t0, $t1
+slt  $t7, $t0, $t1
+sll  $s0, $t0, 2
+srl  $s1, $t2, 1
+ori  $s2, $zero, 0xFF
+lui  $s3, 0x0001
+addi $s4, $t2, -5
+slti $s5, $t0, 15</textarea>
+
+      <div class="btn-row">
+        <button id="btn-load">&#9654; Load</button>
+        <button id="btn-step" disabled>Step &rarr;</button>
+        <button id="btn-all" disabled>Run All</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+
+      <div id="statusbar">Ready. Paste your code and click Load.</div>
+
+      <div class="small-label">Instruction Queue</div>
+      <div id="instr-list"><div class="hint">-- no program loaded --</div></div>
+
+    </div>
+  </div>
+
+  <!-- Register file -->
+  <div class="pane" id="reg-pane">
+    <div class="pane-title"><div class="led blue"></div> Registers (32 x 32-bit)</div>
+    <div class="reg-grid" id="reg-grid"></div>
+  </div>
+
+  <!-- Machine code output -->
+  <div class="pane" id="mc-pane">
+    <div class="pane-title"><div class="led purple"></div> Machine Code</div>
+    <div class="mc-body" id="mc-body">
+      <div class="hint">Execute an instruction to see its binary encoding here.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// register names, index 0..31
+var regNames = [
+  '$zero','$at','$v0','$v1',
+  '$a0','$a1','$a2','$a3',
+  '$t0','$t1','$t2','$t3','$t4','$t5','$t6','$t7',
+  '$s0','$s1','$s2','$s3','$s4','$s5','$s6','$s7',
+  '$t8','$t9','$k0','$k1',
+  '$gp','$sp','$fp','$ra'
+];
+
+// build a lookup table for register name -> index
+var regIndex = {};
+regNames.forEach(function(name, i) {
+  regIndex[name] = i;
+  regIndex['$' + i] = i;
+  regIndex[name.slice(1)] = i;  // without the $
+});
+
+function getReg(s) {
+  s = s.trim().toLowerCase();
+  if (!s.startsWith('$')) s = '$' + s;
+  return (regIndex[s] !== undefined) ? regIndex[s] : null;
+}
+
+// funct codes for R-type
+var functCodes = {
+  add: 0x20, addu: 0x21, sub: 0x22, subu: 0x23,
+  and: 0x24, or: 0x25, nor: 0x27, xor: 0x26,
+  slt: 0x2a, sltu: 0x2b,
+  sll: 0x00, srl: 0x02, sra: 0x03,
+  jr: 0x08
+};
+
+// opcodes for I-type
+var opCodes = {
+  addi: 0x08, addiu: 0x09,
+  andi: 0x0c, ori: 0x0d, xori: 0x0e,
+  slti: 0x0a, sltiu: 0x0b,
+  lw: 0x23, sw: 0x2b,
+  lh: 0x21, lb: 0x20,
+  beq: 0x04, bne: 0x05,
+  lui: 0x0f
+};
+
+var memoryOps = ['lw','sw','lh','lb','sh','sb'];
+
+var registers = new Int32Array(32);
+var program = [];   // parsed instructions
+var pc = 0;
+var mcLog = [];     // machine code cards built so far
+
+// ---- helpers ----
+
+function parseNum(s) {
+  s = s.trim();
+  if (s.startsWith('0x') || s.startsWith('0X')) return parseInt(s, 16);
+  return parseInt(s, 10);
+}
+
+function signExtend16(n) {
+  n = n & 0xFFFF;
+  return n >= 0x8000 ? n - 0x10000 : n;
+}
+
+function toBinary(val, bits) {
+  return (val & ((1 << bits) - 1)).toString(2).padStart(bits, '0');
+}
+
+function toHex8(val) {
+  return '0x' + (val >>> 0).toString(16).padStart(8, '0').toUpperCase();
+}
+
+// parse "offset(base)" format used in lw/sw
+function parseMemArg(s) {
+  var m = s.match(/^(-?\w+)\((\$\w+|\$\d+)\)$/);
+  if (!m) return null;
+  return { imm: parseNum(m[1]), base: m[2] };
+}
+
+// ---- UI helpers ----
+
+function setStatus(msg, type) {
+  var el = document.getElementById('statusbar');
+  el.textContent = msg;
+  el.className = type || '';
+}
+
+// ---- register display ----
+
+function buildRegGrid() {
+  var grid = document.getElementById('reg-grid');
+  grid.innerHTML = '';
+  regNames.forEach(function(name, i) {
+    var box = document.createElement('div');
+    box.className = 'reg-box zeroval';
+    box.id = 'rb' + i;
+    box.innerHTML = '<div class="reg-name">' + name + '</div>'
+                  + '<div class="reg-val" id="rv' + i + '">0x00000000</div>';
+    grid.appendChild(box);
+  });
+}
+
+function refreshRegs(changed) {
+  regNames.forEach(function(_, i) {
+    var v = registers[i];
+    var valEl = document.getElementById('rv' + i);
+    var box = document.getElementById('rb' + i);
+    valEl.textContent = toHex8(v);
+    if (changed && changed.indexOf(i) !== -1) {
+      box.className = 'reg-box highlight';
+      setTimeout(function() {
+        box.className = 'reg-box' + (registers[i] === 0 ? ' zeroval' : '');
+      }, 1100);
+    } else {
+      box.className = 'reg-box' + (v === 0 ? ' zeroval' : '');
+    }
+  });
+}
+
+// ---- machine code builder ----
+
+function buildMachineCodeCard(instr) {
+  var op = instr.op;
+  var args = instr.args;
+  var fields = [];
+  var word = 0;
+
+  function makeField(label, val, bits, cls) {
+    return '<div class="field ' + cls + '">'
+      + '<div class="field-name">' + label + '</div>'
+      + '<div class="field-bits">' + toBinary(val, bits) + '</div>'
+      + '</div>';
+  }
+
+  var isShift = (op === 'sll' || op === 'srl' || op === 'sra');
+
+  if (functCodes[op] !== undefined && !isShift) {
+    // standard R-type: op rd, rs, rt
+    var rd = getReg(args[0]) || 0;
+    var rs = getReg(args[1]) || 0;
+    var rt = getReg(args[2]) || 0;
+    word = (rs << 21) | (rt << 16) | (rd << 11) | functCodes[op];
+    fields.push(makeField('opcode', 0, 6, 'f-op'));
+    fields.push(makeField('rs', rs, 5, 'f-rs'));
+    fields.push(makeField('rt', rt, 5, 'f-rt'));
+    fields.push(makeField('rd', rd, 5, 'f-rd'));
+    fields.push(makeField('shamt', 0, 5, 'f-sh'));
+    fields.push(makeField('funct', functCodes[op], 6, 'f-fn'));
+
+  } else if (isShift) {
+    // shift: op rd, rt, shamt
+    var rd2 = getReg(args[0]) || 0;
+    var rt2 = getReg(args[1]) || 0;
+    var sa = parseNum(args[2]) & 0x1f;
+    word = (rt2 << 16) | (rd2 << 11) | (sa << 6) | functCodes[op];
+    fields.push(makeField('opcode', 0, 6, 'f-op'));
+    fields.push(makeField('rs', 0, 5, 'f-rs'));
+    fields.push(makeField('rt', rt2, 5, 'f-rt'));
+    fields.push(makeField('rd', rd2, 5, 'f-rd'));
+    fields.push(makeField('shamt', sa, 5, 'f-sh'));
+    fields.push(makeField('funct', functCodes[op], 6, 'f-fn'));
+
+  } else if (opCodes[op] !== undefined) {
+    var opc = opCodes[op];
+
+    if (op === 'lui') {
+      var rt3 = getReg(args[0]) || 0;
+      var imm3 = parseNum(args[1]) & 0xFFFF;
+      word = (opc << 26) | (rt3 << 16) | imm3;
+      fields.push(makeField('opcode', opc, 6, 'f-op'));
+      fields.push(makeField('rs', 0, 5, 'f-rs'));
+      fields.push(makeField('rt', rt3, 5, 'f-rt'));
+      fields.push(makeField('imm', imm3, 16, 'f-im'));
+
+    } else if (memoryOps.indexOf(op) !== -1) {
+      var rtM = getReg(args[0]) || 0;
+      var mem = parseMemArg(args[1]);
+      var base = mem ? (getReg(mem.base) || 0) : 0;
+      var immM = mem ? mem.imm : 0;
+      word = (opc << 26) | (base << 21) | (rtM << 16) | (immM & 0xFFFF);
+      fields.push(makeField('opcode', opc, 6, 'f-op'));
+      fields.push(makeField('base', base, 5, 'f-rs'));
+      fields.push(makeField('rt', rtM, 5, 'f-rt'));
+      fields.push(makeField('offset', immM & 0xFFFF, 16, 'f-im'));
+
+    } else if (op === 'beq' || op === 'bne') {
+      var rsB = getReg(args[0]) || 0;
+      var rtB = getReg(args[1]) || 0;
+      var immB = isNaN(parseNum(args[2])) ? 0 : parseNum(args[2]);
+      word = (opc << 26) | (rsB << 21) | (rtB << 16) | (immB & 0xFFFF);
+      fields.push(makeField('opcode', opc, 6, 'f-op'));
+      fields.push(makeField('rs', rsB, 5, 'f-rs'));
+      fields.push(makeField('rt', rtB, 5, 'f-rt'));
+      fields.push(makeField('offset', immB & 0xFFFF, 16, 'f-im'));
+
+    } else {
+      // addi, andi, ori, etc.  format: op rt, rs, imm
+      var rtI = getReg(args[0]) || 0;
+      var rsI = getReg(args[1]) || 0;
+      var immI = parseNum(args[2]);
+      word = (opc << 26) | (rsI << 21) | (rtI << 16) | (immI & 0xFFFF);
+      fields.push(makeField('opcode', opc, 6, 'f-op'));
+      fields.push(makeField('rs', rsI, 5, 'f-rs'));
+      fields.push(makeField('rt', rtI, 5, 'f-rt'));
+      fields.push(makeField('imm', immI & 0xFFFF, 16, 'f-im'));
+    }
+  }
+
+  var instrType = (functCodes[op] !== undefined) ? 'R-type' : 'I-type';
+  var hexWord = toHex8(word);
+
+  return '<div class="mc-card">'
+    + '<div class="mc-instr">' + instr.raw + '</div>'
+    + '<div class="mc-fields">' + fields.join('') + '</div>'
+    + '<div class="mc-meta">'
+    + 'Hex: <b>' + hexWord + '</b>'
+    + '&nbsp;&nbsp;Type: <b>' + instrType + '</b>'
+    + '&nbsp;&nbsp;Decimal: <b>' + (word >>> 0) + '</b>'
+    + '</div>'
+    + '</div>';
+}
+
+// ---- instruction execution ----
+
+function executeOne(instr) {
+  var op = instr.op;
+  var args = instr.args;
+  var changed = [];
+  var note = '';
+
+  function wr(idx, val) {
+    if (idx === 0) return;   // $zero is hardwired to 0
+    registers[idx] = val | 0;
+    changed.push(idx);
+  }
+
+  if (op === 'add' || op === 'addu') {
+    var d = getReg(args[0]), s = getReg(args[1]), t = getReg(args[2]);
+    wr(d, registers[s] + registers[t]);
+    note = regNames[d] + ' = ' + registers[s] + ' + ' + registers[t];
+
+  } else if (op === 'sub' || op === 'subu') {
+    var d = getReg(args[0]), s = getReg(args[1]), t = getReg(args[2]);
+    wr(d, registers[s] - registers[t]);
+    note = regNames[d] + ' = ' + registers[s] + ' - ' + registers[t];
+
+  } else if (op === 'and') {
+    var d = getReg(args[0]), s = getReg(args[1]), t = getReg(args[2]);
+    wr(d, registers[s] & registers[t]);
+    note = regNames[d] + ' = AND result';
+
+  } else if (op === 'or') {
+    var d = getReg(args[0]), s = getReg(args[1]), t = getReg(args[2]);
+    wr(d, registers[s] | registers[t]);
+    note = regNames[d] + ' = OR result';
+
+  } else if (op === 'nor') {
+    var d = getReg(args[0]), s = getReg(args[1]), t = getReg(args[2]);
+    wr(d, ~(registers[s] | registers[t]));
+    note = regNames[d] + ' = NOR result';
+
+  } else if (op === 'xor') {
+    var d = getReg(args[0]), s = getReg(args[1]), t = getReg(args[2]);
+    wr(d, registers[s] ^ registers[t]);
+
+  } else if (op === 'slt') {
+    var d = getReg(args[0]), s = getReg(args[1]), t = getReg(args[2]);
+    wr(d, registers[s] < registers[t] ? 1 : 0);
+    note = regNames[d] + ' = ' + (registers[d]);
+
+  } else if (op === 'sltu') {
+    var d = getReg(args[0]), s = getReg(args[1]), t = getReg(args[2]);
+    wr(d, (registers[s] >>> 0) < (registers[t] >>> 0) ? 1 : 0);
+
+  } else if (op === 'sll') {
+    var d = getReg(args[0]), t = getReg(args[1]);
+    var sa = parseNum(args[2]) & 0x1f;
+    wr(d, registers[t] << sa);
+    note = regNames[d] + ' = ' + registers[t] + ' << ' + sa;
+
+  } else if (op === 'srl') {
+    var d = getReg(args[0]), t = getReg(args[1]);
+    var sa = parseNum(args[2]) & 0x1f;
+    wr(d, registers[t] >>> sa);
+    note = regNames[d] + ' = ' + registers[t] + ' >>> ' + sa;
+
+  } else if (op === 'sra') {
+    var d = getReg(args[0]), t = getReg(args[1]);
+    var sa = parseNum(args[2]) & 0x1f;
+    wr(d, registers[t] >> sa);
+
+  } else if (op === 'addi' || op === 'addiu') {
+    var t2 = getReg(args[0]), s2 = getReg(args[1]);
+    var imm = signExtend16(parseNum(args[2]));
+    wr(t2, registers[s2] + imm);
+    note = regNames[t2] + ' = ' + registers[s2] + ' + ' + imm + ' = ' + registers[t2];
+
+  } else if (op === 'andi') {
+    var t2 = getReg(args[0]), s2 = getReg(args[1]);
+    wr(t2, registers[s2] & (parseNum(args[2]) & 0xFFFF));
+
+  } else if (op === 'ori') {
+    var t2 = getReg(args[0]), s2 = getReg(args[1]);
+    var imm2 = parseNum(args[2]) & 0xFFFF;
+    wr(t2, registers[s2] | imm2);
+    note = regNames[t2] + ' = ' + registers[s2] + ' | 0x' + imm2.toString(16);
+
+  } else if (op === 'xori') {
+    var t2 = getReg(args[0]), s2 = getReg(args[1]);
+    wr(t2, registers[s2] ^ (parseNum(args[2]) & 0xFFFF));
+
+  } else if (op === 'slti') {
+    var t2 = getReg(args[0]), s2 = getReg(args[1]);
+    var imm2 = signExtend16(parseNum(args[2]));
+    wr(t2, registers[s2] < imm2 ? 1 : 0);
+
+  } else if (op === 'lui') {
+    var t2 = getReg(args[0]);
+    var imm2 = parseNum(args[1]) & 0xFFFF;
+    wr(t2, imm2 << 16);
+    note = regNames[t2] + ' = 0x' + (registers[t2] >>> 0).toString(16).toUpperCase();
+
+  } else if (op === 'beq') {
+    var s3 = getReg(args[0]), t3 = getReg(args[1]);
+    note = registers[s3] === registers[t3] ? 'branch taken' : 'branch not taken';
+
+  } else if (op === 'bne') {
+    var s3 = getReg(args[0]), t3 = getReg(args[1]);
+    note = registers[s3] !== registers[t3] ? 'branch taken' : 'branch not taken';
+
+  } else if (memoryOps.indexOf(op) !== -1) {
+    note = 'memory operation (simulated)';
+
+  } else {
+    return { ok: false, msg: 'unknown instruction: ' + op };
+  }
+
+  return { ok: true, changed: changed, note: note };
+}
+
+// ---- parsing ----
+
+function parseLine(raw) {
+  var stripped = raw.replace(/#.*/, '').trim();
+  if (!stripped) return null;
+  // strip label if any
+  stripped = stripped.replace(/^\w+:\s*/, '');
+  if (!stripped) return null;
+  var parts = stripped.split(/[\s,]+/).filter(Boolean);
+  if (!parts.length) return null;
+  return { op: parts[0].toLowerCase(), args: parts.slice(1), raw: stripped };
+}
+
+// ---- load program ----
+
+function loadProgram() {
+  var text = document.getElementById('code').value;
+  var lines = text.split('\n');
+  program = [];
+  var errors = [];
+
+  lines.forEach(function(line, idx) {
+    var parsed = parseLine(line);
+    if (!parsed) return;
+    var op = parsed.op;
+    if (functCodes[op] === undefined && opCodes[op] === undefined) {
+      errors.push('Line ' + (idx + 1) + ': unrecognized opcode "' + op + '"');
+      return;
+    }
+    program.push(parsed);
+  });
+
+  if (errors.length > 0) {
+    setStatus(errors[0], 'err');
+    return;
+  }
+  if (program.length === 0) {
+    setStatus('No valid instructions found.', 'err');
+    return;
+  }
+
+  pc = 0;
+  registers = new Int32Array(32);
+  mcLog = [];
+  refreshRegs([]);
+  renderQueue();
+  document.getElementById('mc-body').innerHTML = '<div class="hint">Click "Step" to start stepping through instructions.</div>';
+  setStatus('Loaded ' + program.length + ' instructions.', 'ok');
+  document.getElementById('btn-step').disabled = false;
+  document.getElementById('btn-all').disabled = false;
+}
+
+// ---- render instruction list ----
+
+function renderQueue() {
+  var list = document.getElementById('instr-list');
+  list.innerHTML = '';
+  program.forEach(function(ins, i) {
+    var row = document.createElement('div');
+    row.className = 'instr-row' + (i === pc ? ' current' : '') + (i < pc ? ' done' : '');
+    row.id = 'ir' + i;
+    row.innerHTML = '<div class="instr-idx">' + String(i).padStart(2, '0') + '</div>'
+                  + '<div class="instr-text">' + ins.raw + '</div>';
+    list.appendChild(row);
+  });
+}
+
+// ---- step ----
+
+function stepNext() {
+  if (pc >= program.length) return;
+
+  var ins = program[pc];
+  var result = executeOne(ins);
+
+  if (!result.ok) {
+    setStatus('Error at [' + pc + ']: ' + result.msg, 'err');
+    var badRow = document.getElementById('ir' + pc);
+    if (badRow) badRow.classList.add('bad');
+    return;
+  }
+
+  refreshRegs(result.changed);
+
+  // append machine code card
+  mcLog.push(buildMachineCodeCard(ins));
+  document.getElementById('mc-body').innerHTML = mcLog.slice().reverse().join('');
+
+  var msg = '[' + pc + '] ' + ins.raw;
+  if (result.note) msg += '  →  ' + result.note;
+  setStatus(msg, 'info');
+
+  var doneRow = document.getElementById('ir' + pc);
+  if (doneRow) doneRow.className = 'instr-row done';
+
+  pc++;
+
+  if (pc < program.length) {
+    var nextRow = document.getElementById('ir' + pc);
+    if (nextRow) {
+      nextRow.className = 'instr-row current';
+      nextRow.scrollIntoView({ block: 'nearest' });
+    }
+  } else {
+    setStatus('Done — all ' + program.length + ' instructions executed.', 'ok');
+    document.getElementById('btn-step').disabled = true;
+    document.getElementById('btn-all').disabled = true;
+  }
+}
+
+// ---- reset ----
+
+function resetAll() {
+  pc = 0;
+  registers = new Int32Array(32);
+  mcLog = [];
+  program = [];
+  refreshRegs([]);
+  document.getElementById('instr-list').innerHTML = '<div class="hint">-- no program loaded --</div>';
+  document.getElementById('mc-body').innerHTML = '<div class="hint">Execute an instruction to see its binary encoding here.</div>';
+  setStatus('Simulator reset.');
+  document.getElementById('btn-step').disabled = true;
+  document.getElementById('btn-all').disabled = true;
+}
+
+// ---- wire up buttons ----
+
+document.getElementById('btn-load').addEventListener('click', loadProgram);
+document.getElementById('btn-step').addEventListener('click', stepNext);
+document.getElementById('btn-reset').addEventListener('click', resetAll);
+document.getElementById('btn-all').addEventListener('click', function() {
+  while (pc < program.length) stepNext();
+});
+
+// init on load
+buildRegGrid();
+refreshRegs([]);
+</script>
+</body>
+</html>
